@@ -1,0 +1,79 @@
+#!/bin/sh
+####
+####20130422 by yangyi
+####
+
+status=0
+#### cmd_set
+set_warning=500
+set_critical=1000
+
+#### cmd_get
+get_warning=10000
+get_critical=50000
+
+#### cmd_hits
+hits_warning=70
+hits_critical=60
+
+#### curr_connect
+curr_connect_warning=3000
+curr_connect_critical=4096
+
+
+###### memory
+
+
+
+
+port=$1
+OLDFILE=/tmp/check_memcache_$port.old.tmp
+TEMPFILE=/tmp/check_memcache_$port.tmp
+
+read_tmpfile() {
+  if [ -e ${OLDFILE} ]; then
+    source ${OLDFILE}                   # include the vars from the tmp file
+  else
+    time_old=0
+    cmd_get_old=0
+    cmd_set_old=0
+  fi 
+}
+
+write_tmpfile() {
+  echo "time_old=$(date +%s)" > ${OLDFILE}
+  echo "cmd_get_old=$cmd_get" >> ${OLDFILE}
+  echo "cmd_set_old=$cmd_set" >> ${OLDFILE}
+}
+
+read_tmpfile
+
+echo stats | nc 127.0.0.1 $port > $TEMPFILE
+
+[ $? -ne 0 ] && status=2 && exit 0
+
+dos2unix $TEMPFILE >> /dev/null 2>&1
+
+time=`grep 'STAT time' $TEMPFILE | cut -d " " -f 3`
+cmd_get=`grep 'STAT cmd_get' $TEMPFILE | cut -d " " -f 3`
+cmd_set=`grep 'STAT cmd_set' $TEMPFILE | cut -d " " -f 3`
+get_hits=`grep 'STAT get_hits' $TEMPFILE | cut -d " " -f 3`
+curr_connect=`grep 'STAT curr_connections' $TEMPFILE | cut -d " " -f 3`
+bytes=`grep -w 'STAT bytes' $TEMPFILE |cut -d " " -f 3`
+write_tmpfile
+
+diff_time=$(bc <<< $time-$time_old)
+diff_get=$(bc <<< $cmd_get-$cmd_get_old)
+diff_set=$(bc <<< $cmd_set-$cmd_set_old)
+
+pct_get=$(bc <<< $diff_get/$diff_time)
+pct_set=$(bc <<< $diff_set/$diff_time)
+pct_hits=$(bc <<< $get_hits*100/$cmd_get)
+
+if [ $pct_get -gt $get_warning ] || [ $pct_set -gt $set_warning ] || [ $pct_hits -lt $hits_warning ] || [ $curr_connect -gt $curr_connect_warning ];then
+    status=1
+fi
+if [ $pct_get -gt $get_critical ] || [ $pct_set -gt $set_critical ] || [ $pct_hits -lt $hits_critical ] || [ $curr_connect -gt $curr_connect_critical ];then
+    status=2
+fi
+echo ${pct_hits} $pct_get $pct_set $curr_connect $bytes

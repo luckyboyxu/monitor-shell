@@ -1,0 +1,42 @@
+#! /bin/sh
+#
+#    spider    This shell script takes care of starting and stopping
+#              the Spider services.
+#
+# chkconfig: 2345 64 36
+# description: A monitoring automation client
+
+start(){
+    sh /usr/local/Spider_new/ets_client/bin/ets.sh client start
+}
+stop(){
+    sh /usr/local/Spider_new/ets_client/bin/ets.sh client stop
+}
+restart () {
+    stop
+    start
+}
+status(){
+    sh /usr/local/Spider_new/ets_client/bin/ets.sh client status
+}
+
+RETVAL=0
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart|reload)
+    restart
+    ;;
+  status)
+    status
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|status|restart|reload}"
+    RETVAL=1
+esac
+
+exit $RETVAL
