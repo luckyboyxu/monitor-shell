@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<db>
+    <mysql>
+        <sms host="192.168.0.237" port="3306" user="sms" passwd="123456" db="sms" charset="utf8" use_unicode="False" pooling="pool_size=4;use_threadlocal=True" />
+        <ywshow host="192.168.200.157" port="3306" user="ywshow" passwd="show!@#yw" db="yw_show" charset="utf8" use_unicode="False" pooling="pool_size=4;use_threadlocal=True" />
+    </mysql>
+</db>
+		    
